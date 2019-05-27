@@ -16,26 +16,20 @@ func main() {
 
 	ticker := time.NewTicker(100 * time.Millisecond)
 
-	go func() {
-		for t := range ticker.C {
-			clicker <- t
-			makeEngineer <- t
-			xpEngineers <- t
-		}
-	}()
+	go tick(ticker, clicker, makeEngineer, xpEngineers)
 
-	register(clicker, func() {
+	go register(clicker, func() {
 		fmt.Println("Clickety-click")
 	})
 
 	engineers := make([]engineer, 0)
 
-	register(makeEngineer, func() {
+	go register(makeEngineer, func() {
 		engineers = append(engineers, engineer{})
 		fmt.Println("A new engineer!")
 	})
 
-	register(xpEngineers, func() {
+	go register(xpEngineers, func() {
 		for i := range engineers {
 			engineers[i].ticks++
 		}
@@ -55,10 +49,16 @@ func main() {
 }
 
 func register(c chan time.Time, f func()) {
-	go func() {
-		for {
-			<-c
-			f()
-		}
-	}()
+	for {
+		<-c
+		f()
+	}
+}
+
+func tick(t *time.Ticker, c, m, x chan time.Time) {
+	for t := range t.C {
+		c <- t
+		m <- t
+		x <- t
+	}
 }
