@@ -11,18 +11,15 @@ type engineer struct {
 
 func main() {
 	listeners := make([]chan time.Time, 0)
-
-	go register(&listeners, func() {
-		fmt.Println("Clickety-click")
-	})
-
 	engineers := make([]engineer, 0)
 
+	go register(&listeners, clickerClosure())
 	go register(&listeners, xpEngineersClosure(&engineers))
 	go register(&listeners, makeEngineerClosure(&engineers))
 
 	ticker := time.NewTicker(100 * time.Millisecond)
-	go tick(ticker, listeners)
+
+	go tick(ticker, &listeners)
 
 	time.Sleep(3000 * time.Millisecond)
 
@@ -35,25 +32,34 @@ func main() {
 	for _, e := range engineers {
 		fmt.Println(e)
 	}
+
+}
+
+func clickerClosure() func() {
+	fmt.Println("creating the clicker closure")
+	return func() {
+		fmt.Println("Clickety-click")
+	}
 }
 
 func makeEngineerClosure(e *[]engineer) func() {
+	fmt.Println("creating the engineer closure")
 	return func() {
 		*e = append(*e, engineer{})
-		fmt.Println("A new engineer! from a closure")
 	}
 }
 
 func xpEngineersClosure(e *[]engineer) func() {
+	fmt.Println("creating the xp closure")
 	return func() {
 		for i := range *e {
 			(*e)[i].ticks++
 		}
-		fmt.Println("Gave engineers some xp!")
 	}
 }
 
 func register(listeners *[]chan time.Time, f func()) {
+	fmt.Println("registering a function")
 	c := make(chan time.Time)
 	*listeners = append(*listeners, c)
 
@@ -63,10 +69,12 @@ func register(listeners *[]chan time.Time, f func()) {
 	}
 }
 
-func tick(t *time.Ticker, listeners []chan time.Time) {
+func tick(t *time.Ticker, listeners *[]chan time.Time) {
 	for t := range t.C {
-		for _, l := range listeners {
+		fmt.Println("tick")
+		for i, l := range *listeners {
 			l <- t
+			fmt.Println(i)
 		}
 	}
 }
