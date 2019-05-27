@@ -14,10 +14,6 @@ func main() {
 	makeEngineer := make(chan time.Time)
 	xpEngineers := make(chan time.Time)
 
-	ticker := time.NewTicker(100 * time.Millisecond)
-
-	go tick(ticker, clicker, makeEngineer, xpEngineers)
-
 	go register(clicker, func() {
 		fmt.Println("Clickety-click")
 	})
@@ -25,8 +21,11 @@ func main() {
 	engineers := make([]engineer, 0)
 
 	go register(makeEngineer, makeEngineerClosure(&engineers))
-
 	go register(xpEngineers, xpEngineersClosure(&engineers))
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	listeners := []chan time.Time{clicker, makeEngineer, xpEngineers}
+	go tick(ticker, listeners)
 
 	time.Sleep(3000 * time.Millisecond)
 
@@ -63,10 +62,10 @@ func register(c chan time.Time, f func()) {
 	}
 }
 
-func tick(t *time.Ticker, c, m, x chan time.Time) {
+func tick(t *time.Ticker, listeners []chan time.Time) {
 	for t := range t.C {
-		c <- t
-		m <- t
-		x <- t
+		for _, l := range listeners {
+			l <- t
+		}
 	}
 }
