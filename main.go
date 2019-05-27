@@ -24,17 +24,9 @@ func main() {
 
 	engineers := make([]engineer, 0)
 
-	go register(makeEngineer, func() {
-		engineers = append(engineers, engineer{})
-		fmt.Println("A new engineer!")
-	})
+	go register(makeEngineer, makeEngineerClosure(&engineers))
 
-	go register(xpEngineers, func() {
-		for i := range engineers {
-			engineers[i].ticks++
-		}
-		fmt.Println("Gave engineers some xp!")
-	})
+	go register(xpEngineers, xpEngineersClosure(&engineers))
 
 	time.Sleep(3000 * time.Millisecond)
 
@@ -45,6 +37,22 @@ func main() {
 
 	for _, e := range engineers {
 		fmt.Println(e)
+	}
+}
+
+func makeEngineerClosure(e *[]engineer) func() {
+	return func() {
+		*e = append(*e, engineer{})
+		fmt.Println("A new engineer! from a closure")
+	}
+}
+
+func xpEngineersClosure(e *[]engineer) func() {
+	return func() {
+		for i := range *e {
+			(*e)[i].ticks++
+		}
+		fmt.Println("Gave engineers some xp!")
 	}
 }
 
