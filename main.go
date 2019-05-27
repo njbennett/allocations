@@ -10,21 +10,18 @@ type engineer struct {
 }
 
 func main() {
-	clicker := make(chan time.Time)
-	makeEngineer := make(chan time.Time)
-	xpEngineers := make(chan time.Time)
+	listeners := make([]chan time.Time, 0)
 
-	go register(clicker, func() {
+	go register(&listeners, func() {
 		fmt.Println("Clickety-click")
 	})
 
 	engineers := make([]engineer, 0)
 
-	go register(makeEngineer, makeEngineerClosure(&engineers))
-	go register(xpEngineers, xpEngineersClosure(&engineers))
+	go register(&listeners, xpEngineersClosure(&engineers))
+	go register(&listeners, makeEngineerClosure(&engineers))
 
 	ticker := time.NewTicker(100 * time.Millisecond)
-	listeners := []chan time.Time{clicker, makeEngineer, xpEngineers}
 	go tick(ticker, listeners)
 
 	time.Sleep(3000 * time.Millisecond)
@@ -33,6 +30,7 @@ func main() {
 	fmt.Println("Ticker stopped")
 
 	fmt.Println(len(engineers))
+	fmt.Println(listeners)
 
 	for _, e := range engineers {
 		fmt.Println(e)
@@ -55,7 +53,10 @@ func xpEngineersClosure(e *[]engineer) func() {
 	}
 }
 
-func register(c chan time.Time, f func()) {
+func register(listeners *[]chan time.Time, f func()) {
+	c := make(chan time.Time)
+	*listeners = append(*listeners, c)
+
 	for {
 		<-c
 		f()
